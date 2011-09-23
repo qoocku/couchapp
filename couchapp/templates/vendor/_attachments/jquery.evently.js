@@ -23,8 +23,26 @@ function $$(node) {
   };
   $.forIn = forIn;
   function funViaString(fun, hint) {
+    var evaluator = null
+    var src = null
     if (fun && fun.match && fun.match(/^function/)) {
-      eval("var f = "+fun);
+      evaluator = eval
+      src = "var f = " + fun
+    } else if (CoffeeScript && fun && fun.match && fun.match(/^\(.*\)[ ]*->/)) {
+      evaluator = CoffeeScript.eval
+      try {
+        src = CoffeeScript.compile("f = " + fun, {bare: true})
+      } catch (e) {
+        throw new Error("CoffeeScript error <<<" + e + ">>> in {{{" + fun + "}}}")
+      }
+    }
+    if (evaluator) {
+      try {
+        eval(src)
+      }
+      catch (e) {
+        alert("Error '" + e + "'while evaluating source: <<<" + src + ">>>")
+      }
       if (typeof f == "function") {
         return function() {
           try {
@@ -205,11 +223,11 @@ function $$(node) {
     if (h.async && !arun) {
       runAsync(me, h, args)
     } else if (h.query && !qrun) {
-      // $.log("query before renderElement", arguments)
+      //$.log("query before renderElement", arguments)
       runQuery(me, h, args)
     } else {
-      // $.log("renderElement")
-      // $.log(me, h, args, qrun)
+      //$.log("renderElement")
+      //$.log(me, h, args, qrun)
       // otherwise we just render the template with the current args
       var selectors = runIfFun(me, h.selectors, args);
       var act = (h.render || "replace").replace(/\s/g,"");
@@ -226,10 +244,10 @@ function $$(node) {
           var s = newElem;
         }
         forIn(selectors, function(selector, handlers) {
-          // $.log("selector", selector);
-          // $.log("selected", $(selector, s));
+          //$.log("selector", selector);
+          //$.log("selected", $(selector, s), handlers);
           $(selector, s).evently(handlers, app, args);
-          // $.log("applied", selector);
+          //$.log("applied", selector);
         });
       }
       if (h.after) {
